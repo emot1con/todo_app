@@ -1,5 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_list/screen/login_screen.dart';
+import 'package:flutter_todo_list/provider/todo/todo_provider.dart';
+import 'package:provider/provider.dart';
+
+import 'package:flutter_todo_list/provider/auth/auth_provider.dart';
+import 'package:flutter_todo_list/screen/starting_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,10 +15,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(),
-      home: const LoginScreen(),
+    final Dio dio = Dio(
+      BaseOptions(baseUrl: "http://10.0.2.2:8080/"),
+    );
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => AuthProvider(dio: dio),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TodoProvider(dio: dio),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark(),
+        home: const StartingScreen(),
+      ),
     );
   }
 }

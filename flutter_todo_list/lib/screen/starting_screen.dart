@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_list/provider/auth/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class StartingScreen extends StatefulWidget {
   const StartingScreen({super.key});
@@ -8,9 +10,11 @@ class StartingScreen extends StatefulWidget {
 }
 
 class _StartingScreenState extends State<StartingScreen> {
-
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().navigateScreen(context);
+    });
     super.initState();
   }
 
