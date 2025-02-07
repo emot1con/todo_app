@@ -1,6 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_todo_list/models/todo_model.dart';
+import 'package:flutter_todo_list/utils/token.dart';
 
 class TodoRepository {
   Future<Either<String, String>> createTodo(
@@ -17,7 +20,7 @@ class TodoRepository {
         }),
       );
       if (response.statusCode! <= 299) {
-        return right(response.data.toString());
+        return right(response.data["message"]);
       }
       return left("Something went wrong, try again later");
     } on DioException catch (e) {
@@ -29,12 +32,37 @@ class TodoRepository {
     }
   }
 
-  Future<Either<String, String>> updateTodo(
-      Dio dio, UpdateTodoPayload payload, int todoID, String accessToken) async {
+  Future<Either<String, List<TodosResponseModel>>> getAll(
+    Dio dio,
+    String accessToken,
+  ) async {
+    try {
+      final todoResponse = await dio.getUri(
+        Uri(path: "/todo"),
+        options: Options(
+          headers: {"Authorization": accessToken},
+        ),
+      );
+      if (todoResponse.statusCode! <= 299) {
+        return Right(
+          todosResponseModelFromJson(todoResponse.data),
+        );
+      }
+      return left("Something wen wrong, try again later");
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(e.response?.data["error"] ?? "unknown error");
+      }
+      return left("error get all todo: $e");
+    }
+  }
+
+  Future<Either<String, String>> updateTodo(Dio dio, UpdateTodoPayload payload,
+      int todoID, String accessToken) async {
     try {
       final response = await dio.putUri(
         Uri(path: "/todo/$todoID"),
-        options: Options(contentType: Headers.jsonContentType,headers: {
+        options: Options(contentType: Headers.jsonContentType, headers: {
           "Authorization": accessToken,
         }),
         data: payload.toJson(),
@@ -52,11 +80,12 @@ class TodoRepository {
     }
   }
 
-  Future<Either<String, String>> deleteTodo(Dio dio, int todoID,  String accessToken) async {
+  Future<Either<String, String>> deleteTodo(
+      Dio dio, int todoID, String accessToken) async {
     try {
       final response = await dio.deleteUri(
         Uri(path: "/todo/$todoID"),
-         options: Options(contentType: Headers.jsonContentType,headers: {
+        options: Options(contentType: Headers.jsonContentType, headers: {
           "Authorization": accessToken,
         }),
       );

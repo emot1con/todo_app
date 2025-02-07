@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart';
 
 import 'package:flutter_todo_list/models/todo_model.dart';
 import 'package:flutter_todo_list/models/token_model.dart';
@@ -39,93 +40,93 @@ class AuthProvider with ChangeNotifier {
 
   void navigateScreen(BuildContext context) async {
     print("Navigate screen");
-    while (true) {
-      try {
-        final todoResponse = await dio.getUri(
-          Uri(path: "/todo"),
-          options: Options(
-            headers: {
-              "Authorization": await getToken(storage, "access-token")
-            },
-          ),
-        );
-        print("get todo");
+    try {
+      final todoResponse = await dio.getUri(
+        Uri(path: "/todo"),
+        options: Options(
+          headers: {"Authorization": await getToken(storage, "access-token")},
+        ),
+      );
+      print("get todo");
+      if (context.mounted) {
+        if (todoResponse.statusCode! <= 299) {
+          _todos = todosResponseModelFromJson(todoResponse.data);
+          notifyListeners();
+          toMainScreen(context);
+          return;
+        }
+        print("valid token");
+        toLoginScreen(context);
+        return;
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        final refreshToken = await getToken(storage, "refresh-token");
+        final expRefreshToken = await getToken(storage, "exp-refresh-token");
+
         if (context.mounted) {
-          if (todoResponse.statusCode! <= 299) {
-            _todos = todosResponseModelFromJson(todoResponse.data);
-            notifyListeners();
-            toMainScreen(context);
+          if (refreshToken == null || refreshToken.isEmpty) {
+            toLoginScreen(context);
             return;
           }
-          print("valid token");
 
-          toLoginScreen(context);
-          return;
-        }
-        print("invalid token");
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 401) {
-          final refreshToken = await getToken(storage, "refresh-token");
-          final expRefreshToken = await getToken(storage, "exp-refresh-token");
-          if (context.mounted) {
-            if (refreshToken == null || refreshToken.isEmpty) {
-              toLoginScreen(context);
-              return;
-            }
-
-            if (refreshToken.isEmpty || expRefreshToken!.isEmpty) {
-              toLoginScreen(context);
-              return;
-            }
-            if (DateTime.now().isAfter(DateTime.parse(expRefreshToken))) {
-              toLoginScreen(context);
-              return;
-            }
-            print("valid refresh token");
-            final refreshTokenResponse = await dio.postUri(
-              Uri(path: "/refresh-token"),
-              options: Options(
-                headers: {
-                  "Authorization": await getToken(storage, "refresh-token"),
-                },
-              ),
-            );
-            if (refreshTokenResponse.statusCode! <= 299) {
-              final newToken = TokenModel.fromJson(refreshTokenResponse.data);
-
-              saveToken(storage, "access-token", newToken.accessToken);
-              saveToken(storage, "exp", newToken.exp);
-              saveToken(storage, "refresh-token", newToken.refreshToken);
-              saveToken(storage, "exp-refresh-token", newToken.expRefreshToken);
-
-              print("Success create new refresh token");
-            } else {
-              if (context.mounted) {
-                deleteToken(storage);
-                toLoginScreen(context);
-                print("failed create refresh token");
-              }
-              return;
-            }
-          }
-        } else {
-          if (context.mounted) {
+          if (refreshToken.isEmpty || expRefreshToken!.isEmpty) {
             toLoginScreen(context);
-            showSnackBar(context, "something went wrong, try again later");
+            return;
           }
-          return;
+          if (checkTokenExpiration(expRefreshToken)) {
+            toLoginScreen(context);
+            return;
+          }
+          print("valid refresh token");
+          final refreshTokenResponse = await dio.postUri(
+            Uri(path: "/auth/refresh-token"),
+            options: Options(
+              headers: {
+                "Authorization": await getToken(storage, "refresh-token"),
+              },
+            ),
+          );
+          if (refreshTokenResponse.statusCode! <= 299) {
+            final newToken = TokenModel.fromJson(refreshTokenResponse.data);
+
+            saveToken(storage, "access-token", newToken.accessToken);
+            saveToken(storage, "exp", newToken.exp);
+            saveToken(storage, "refresh-token", newToken.refreshToken);
+            saveToken(storage, "exp-refresh-token", newToken.expRefreshToken);
+
+            print(
+              "Success create new refresh token and navigate to main screen",
+            );
+            if (context.mounted) {
+              toMainScreen(context);
+            }
+            return;
+          } else {
+            if (context.mounted) {
+              deleteToken(storage);
+              toLoginScreen(context);
+              print("failed create refresh token");
+            }
+            return;
+          }
         }
-        if (e.response != null && context.mounted) {
-          final error = e.response?.data["error"] ?? "unknown error";
-          showSnackBar(context, error);
-          return;
+      } else {
+        if (context.mounted) {
+          toLoginScreen(context);
+          showSnackBar(context, "something went wrong, try again later");
         }
+        return;
       }
-      print("Retrying after refreshing token...");
+      if (e.response != null && context.mounted) {
+        final error = e.response?.data["error"] ?? "unknown error";
+        showSnackBar(context, "something went wrong, try again later");
+        print(error);
+        return;
+      }
     }
   }
 
- 
   Future<void> registerUser(
       String name, email, password, BuildContext context) async {
     try {
@@ -181,5 +182,20 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+}
+
+bool checkTokenExpiration(String expRefreshTokenStr) {
+  try {
+    final String cleanDateStr = expRefreshTokenStr.split(' m=')[0];
+
+    final DateTime expRefreshToken = DateTime.parse(cleanDateStr);
+
+    if (DateTime.now().isAfter(expRefreshToken)) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
   }
 }

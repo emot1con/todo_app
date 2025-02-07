@@ -20,6 +20,9 @@ class TodoProvider with ChangeNotifier {
   final formKeyCreate = GlobalKey<FormState>();
   final formKeyUpdate = GlobalKey<FormState>();
 
+  List<TodosResponseModel> _todos = [];
+  List<TodosResponseModel> get todos => _todos;
+
   // String _createResponse = "";
   // String get createResponse => _createResponse;
 
@@ -38,7 +41,7 @@ class TodoProvider with ChangeNotifier {
   bool updateTodoIsCompleted = false;
   int updateTodoUserID = 0;
 
-  Future<void> createTodo(BuildContext context, int todoID) async {
+  Future<void> createTodo(BuildContext context) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -66,6 +69,36 @@ class TodoProvider with ChangeNotifier {
           return;
         }
         showSnackBar(context, "Error create todo: $e");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getAll(BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final accesToken = await getToken(storage, "access-token");
+      final response = await _todoRepository.getAll(
+        dio,
+        accesToken!,
+      );
+      response.fold((error) {
+        showSnackBar(context, error);
+        return;
+      }, (data) {
+        _todos = data;
+        notifyListeners();
+      });
+    } on DioException catch (e) {
+      if (context.mounted) {
+        if (e.response != null) {
+          showSnackBar(context, e.response?.data["error"] ?? "unknown error");
+          return;
+        }
+        showSnackBar(context, "Error get todo: $e");
       }
     } finally {
       _isLoading = false;
