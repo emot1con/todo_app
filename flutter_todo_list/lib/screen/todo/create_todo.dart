@@ -9,9 +9,6 @@ class CreateTodoScreen extends StatefulWidget {
 }
 
 class _CreateTodoScreenState extends State<CreateTodoScreen> {
-
-  
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,6 +79,7 @@ class _CreateTodoScreenState extends State<CreateTodoScreen> {
                           provider.formKeyCreate.currentState!.save();
                           provider.createTodo(context);
                         }
+                        Navigator.of(context).pop();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,

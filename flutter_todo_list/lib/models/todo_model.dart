@@ -46,7 +46,7 @@ class TodosResponseModel {
   final int id;
   final String title;
   final String description;
-  final bool isCompleted;
+  bool isCompleted;
   final int userId;
   final DateTime createdAt;
 

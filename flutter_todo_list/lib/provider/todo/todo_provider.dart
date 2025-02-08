@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_todo_list/models/todo_model.dart';
 import 'package:flutter_todo_list/repository/todo/todo_repository.dart';
@@ -23,23 +24,25 @@ class TodoProvider with ChangeNotifier {
   List<TodosResponseModel> _todos = [];
   List<TodosResponseModel> get todos => _todos;
 
-  // String _createResponse = "";
-  // String get createResponse => _createResponse;
-
-  // String _updateResponse = "";
-  // String get updateResponse => _updateResponse;
-
-  // String _deleteResponse = "";
-  // String get deleteResponse => _deleteResponse;
-
   String createTodoTitle = "";
   String createTodoDescription = "";
   bool createTodoIsCompleted = false;
 
-  String updateTodoTitle = "";
-  String updateTodoDescription = "";
+  final TextEditingController updateTodoTitle = TextEditingController();
+  final TextEditingController updateTodoDescription = TextEditingController();
   bool updateTodoIsCompleted = false;
-  int updateTodoUserID = 0;
+
+  @override
+  void dispose() {
+    updateTodoTitle.dispose();
+    updateTodoDescription.dispose();
+    super.dispose();
+  }
+
+  void updateTodoCompleted(bool value) {
+    updateTodoIsCompleted = value;
+    notifyListeners();
+  }
 
   Future<void> createTodo(BuildContext context) async {
     _isLoading = true;
@@ -106,18 +109,17 @@ class TodoProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateTodo(BuildContext context, int todoID) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> updateTodo(BuildContext context, int todoID,String title,
+      {bool updateAll = true}) async {
     try {
       final accesToken = await getToken(storage, "access-token");
       final response = await _todoRepository.updateTodo(
         dio,
         UpdateTodoPayload(
-          title: updateTodoTitle,
-          description: updateTodoDescription,
+          title: updateTodoTitle.text,
+          description: updateTodoDescription.text,
           isCompleted: updateTodoIsCompleted,
-          userId: updateTodoUserID,
+          userId: 0,
         ),
         todoID,
         accesToken!,
@@ -126,7 +128,9 @@ class TodoProvider with ChangeNotifier {
         showSnackBar(context, error);
         return;
       }, (data) {
-        showSnackBar(context, data);
+        if (updateAll) {
+          showSnackBar(context, "$title updated");
+        }
       });
     } on DioException catch (e) {
       if (context.mounted) {
@@ -137,14 +141,13 @@ class TodoProvider with ChangeNotifier {
         showSnackBar(context, "Error update todo: $e");
       }
     } finally {
-      _isLoading = false;
+      updateTodoTitle.clear();
+      updateTodoDescription.clear();
       notifyListeners();
     }
   }
 
-  Future<void> deleteTodo(BuildContext context, int todoID) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> deleteTodo(BuildContext context, int todoID, String title) async {
     try {
       final accesToken = await getToken(storage, "access-token");
       final response = await _todoRepository.deleteTodo(
@@ -156,7 +159,7 @@ class TodoProvider with ChangeNotifier {
         showSnackBar(context, error);
         return;
       }, (data) {
-        showSnackBar(context, data);
+        showSnackBar(context, "$title deleted");
       });
     } on DioException catch (e) {
       if (context.mounted) {
@@ -166,9 +169,6 @@ class TodoProvider with ChangeNotifier {
         }
         showSnackBar(context, "Error delete todo: $e");
       }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    } 
   }
 }

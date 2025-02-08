@@ -1,9 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:flutter_todo_list/models/todo_model.dart';
-import 'package:flutter_todo_list/utils/token.dart';
 
 class TodoRepository {
   Future<Either<String, String>> createTodo(
@@ -43,12 +41,15 @@ class TodoRepository {
           headers: {"Authorization": accessToken},
         ),
       );
-      if (todoResponse.statusCode! <= 299) {
+      if (todoResponse.statusCode! <= 299 && todoResponse.data != null) {
         return Right(
           todosResponseModelFromJson(todoResponse.data),
         );
       }
-      return left("Something wen wrong, try again later");
+      if (todoResponse.statusCode! > 299) {
+        return left("Something went wrong, try again later");
+      }
+      return right([]);
     } on DioException catch (e) {
       if (e.response != null) {
         return Left(e.response?.data["error"] ?? "unknown error");

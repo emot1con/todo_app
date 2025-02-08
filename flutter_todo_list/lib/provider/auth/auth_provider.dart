@@ -1,9 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
 
-import 'package:flutter_todo_list/models/todo_model.dart';
 import 'package:flutter_todo_list/models/token_model.dart';
 import 'package:flutter_todo_list/models/user_model.dart';
 import 'package:flutter_todo_list/repository/auth/auth_repository.dart';
@@ -18,9 +16,6 @@ class AuthProvider with ChangeNotifier {
   final _authRepository = AuthRepository();
 
   final storage = FlutterSecureStorage();
-
-  List<TodosResponseModel> _todos = [];
-  List<TodosResponseModel> get todos => _todos;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -50,8 +45,6 @@ class AuthProvider with ChangeNotifier {
       print("get todo");
       if (context.mounted) {
         if (todoResponse.statusCode! <= 299) {
-          _todos = todosResponseModelFromJson(todoResponse.data);
-          notifyListeners();
           toMainScreen(context);
           return;
         }

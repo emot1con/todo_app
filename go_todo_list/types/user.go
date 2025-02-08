@@ -20,8 +20,8 @@ type User struct {
 }
 
 type TodoPayload struct {
-	Title       string `json:"title" validate:"required"`
-	Description string `json:"description" validate:"required"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 	IsCompleted bool   `json:"is_completed"`
 	UserID      int    `json:"user_id"`
 }
