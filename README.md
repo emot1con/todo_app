@@ -18,11 +18,11 @@ A simple task management application built with Flutter for the frontend and Go 
 ### Backend Setup (Go)
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/emot1con/todo_with_backend.git
+   git clone https://github.com/emot1con/todo_app.git
    ```
 2. **Navigate to the backend folder:**
    ```sh
-   cd todo_with_backend/go_todo_list
+   cd todo_app/go_todo_list
    ```
 3. **Install dependencies:**
    ```sh
