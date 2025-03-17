@@ -1,4 +1,4 @@
-# Todo App (Flutter & Go)
+# Simple Todo App (Flutter & Go)
 
 A simple task management application built with Flutter for the frontend and Go for the backend.
 
@@ -22,14 +22,14 @@ A simple task management application built with Flutter for the frontend and Go 
    ```
 2. **Navigate to the backend folder:**
    ```sh
-   cd todo_with_backend
+   cd todo_with_backend/go_todo_list
    ```
 3. **Install dependencies:**
    ```sh
    go mod tidy
    ```
 4. **Configure environment variables:**
-   - Create a `.env` file in the `backend` directory.
+   - Create a `.env` file in the `go_todo_list` directory.
    - Add the following:
      ```env
      DATABASE_URL=your_database_connection_string
@@ -43,7 +43,7 @@ A simple task management application built with Flutter for the frontend and Go 
 ### Frontend Setup (Flutter)
 1. **Navigate to the frontend folder:**
    ```sh
-   cd ../frontend
+   cd ../flutter_todo_list
    ```
 2. **Install dependencies:**
    ```sh
@@ -59,7 +59,4 @@ A simple task management application built with Flutter for the frontend and Go 
 - `POST /tasks` - Create a new task.
 - `PUT /tasks/{id}` - Update a task.
 - `DELETE /tasks/{id}` - Delete a task.
-
-## License
-This project is open-source and available under the MIT License.
 
